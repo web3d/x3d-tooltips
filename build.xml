@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright (c) 1995-2022 held by the author(s). All rights reserved.
+                          
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer
+      in the documentation and/or other materials provided with the
+      distribution.
+    * Neither the names of the Naval Postgraduate School (NPS)
+      Modeling Virtual Environments and Simulation (MOVES) Institute
+      (https://www.nps.edu and https://www.MovesInstitute.org)
+      nor the names of its contributors may be used to endorse or
+      promote products derived from this software without specific
+      prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<!--
+    Document   : build.xml
+    Created on : 9 February 2008
+    Author     : Don Brutzman
+    Description: Ant build.xml file for X3D tooltips
+-->
+
+<project name="X3D tooltips" default="all" basedir=".">
+    <description>HTML page creation, zip and other routines for X3D tooltips</description>
+
+    <!-- configuration properties ============================================================== -->
+
+    <property name="access.properties.filename"  value="../content/examples/access.properties"/>
+    <property file="${access.properties.filename}"/>
+
+    <!-- properties common to all build files and archives ======================================== -->
+    <property environment="env"/>
+    
+    <!-- note that Netbeans default path is built in and will have to be overridden by going to   -->
+    <!-- Tools > Options > Miscellaneous > Ant                                                    -->
+    <!-- and then pointing to C:\apache-ant-1.9.2 (or somesuch directory)                         -->
+    
+    <!-- ANT Contrib archive at http://sourceforge.net/project/showfiles.php?group_id=36177       -->
+    <!-- must have ant-contrib.jar in ANT_HOME/lib (or else specify path)                         -->
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties"/>
+    
+    <!-- https://stackoverflow.com/questions/919692/how-to-execute-xslt-2-0-with-ant -->
+    <!-- https://sourceforge.net/projects/saxon/files/Saxon-HE jar download handled in X3DJSAIL build -->
+    <!-- https://sourceforge.net/projects/saxon/files/Saxon-HE/11/Java/ -->
+    <!-- https://www.saxonica.com/documentation10/#!about/gettingstarted/gettingstartedjava -->
+    <!-- SaxonHE 11 (java.lang.NoClassDefFoundError: org/xmlresolver/Resolver) https://saxonica.plan.io/boards/3/topics/8478?r=8480 -->
+    <property name="saxon.dir"        location="lib" description="relative path from stylesheets directory"/>
+    <property name="saxon.jar"           value="saxon-he-11.3.jar"/><!-- previously saxon-he-11.2.jar saxon-he-10.6.jar saxon9he.jar -->
+    <property name="xmlresolver.jar"     value="xmlresolver-4.2.0.jar"/><!-- required with saxon-he-11+.jar -->
+
+    <!-- ignoreSetupDownloadErrors can be overridden by Hudson configuration, ensure initialized by previous invocations -->
+    <property name="ignoreSetupDownloadErrors" value="true"/>
+    
+    <property name="X3dToXhtml"                   location="X3dToXhtml"/>
+    <property name="X3dToVrml97"                  location="X3dToVrml97"/>
+    <property name="X3dToX3dvClassicVrmlEncoding" location="X3dToX3dvClassicVrmlEncoding"/>
+    
+    <xmlcatalog id="X3D.DTDs">
+        <dtd publicId="ISO//Web3D//DTD X3D 3.0//EN"                                  location="x3d-3.0.dtd"/>
+        <dtd publicId="ISO//Web3D//DTD X3D 3.1//EN"                                  location="x3d-3.1.dtd"/>
+        <dtd publicId="ISO//Web3D//DTD X3D 3.2//EN"                                  location="x3d-3.2.dtd"/>
+        <dtd publicId="ISO//Web3D//DTD X3D 3.3//EN"                                  location="x3d-3.3.dtd"/>
+        <dtd publicId="ISO//Web3D//DTD X3D 4.0//EN"                                  location="x3d-4.0.dtd"/>
+        <dtd publicId="https://www.web3d.org/specifications/x3d-3.0.dtd"             location="x3d-3.0.dtd"/>
+        <dtd publicId="https://www.web3d.org/specifications/x3d-3.1.dtd"             location="x3d-3.1.dtd"/>
+        <dtd publicId="https://www.web3d.org/specifications/x3d-3.2.dtd"             location="x3d-3.2.dtd"/>
+        <dtd publicId="https://www.web3d.org/specifications/x3d-3.3.dtd"             location="x3d-3.3.dtd"/>
+        <dtd publicId="https://www.web3d.org/specifications/x3d-4.0.dtd"             location="x3d-4.0.dtd"/>
+        <dtd publicId="file:///www.web3d.org/TaskGroups/x3d/translation/x3d-3.0.dtd" location="x3d-3.0.dtd"/>
+        <dtd publicId="file:///www.web3d.org/TaskGroups/x3d/translation/x3d-3.1.dtd" location="x3d-3.1.dtd"/>
+    </xmlcatalog>
+   
+    <!-- Ant macro definitions ===================================================================================== -->
+
+    <!-- excerpted/adapted from "SAXON XSLT Processing with Ant" by James Fuller http://ablog.apress.com/?p=753 -->  
+    <macrodef name="saxon10.XML" description="Invoke XSLT transformation on passed inputXML to produce outputFile using passed stylesheet">
+        <attribute name="inputXML"/>
+        <attribute name="outputFile"/>
+        <attribute name="stylesheet"/>
+        <!-- Saxon: parameters provided as keyword=value pairs http://www.saxonica.com/documentation/using-xsl/commandline.xml -->
+        <attribute name="parameter1" default="tooltipLanguage=English"/>
+        <attribute name="parameter2" default="version=4.0"/>
+        <attribute name="parameter3" default=""/>
+        <attribute name="compiled"   default="false"/>
+        <attribute name="verbose"    default="false"/>
+        <sequential>
+            <if>
+                <equals arg1="@{verbose}" arg2="true" />
+                <then>
+                    <echo message="saxon10.XML processing @{inputXML} @{parameter1} @{parameter2} and producing @{outputFile} using @{stylesheet}"/>
+                </then>
+            </if>
+            <if>
+                <equals arg1="@{compiled}" arg2="true" />
+                <then>
+                    <echo message="saxon10.XML using compiled stylesheet"/>
+                    <java classname="net.sf.saxon.Transform" classpath="${saxon.dir}/${saxon.jar};${saxon.dir}/${xmlresolver.jar};." fork="true" failonerror="false">
+                        <!--<arg value="-t"/> timing information -->
+                        <arg value="-s:@{inputXML}"/>
+                        <arg value="-xsl:@{stylesheet}"/>
+                        <arg value="-o:@{outputFile}"/>
+                        <arg value="-warnings:recover"/> <!-- recover after writing a warning message -->
+                        <arg value="@{parameter1}"/>
+                        <arg value="@{parameter2}"/>
+                    </java>
+                </then>
+                <else>
+                    <!-- <echo message="saxon10.XML using regular stylesheet"/> -->
+                    <echo message="saxon10.XML invocation: -s:@{inputXML} -xsl:@{stylesheet} -o:@{outputFile} -warnings:recover @{parameter1} @{parameter2}"/>
+                    <java classname="net.sf.saxon.Transform" classpath="${saxon.dir}/${saxon.jar};." fork="true" failonerror="false">
+                        <!--<arg value="-t"/> timing information -->
+                        <arg value="-s:@{inputXML}"/>
+                        <arg value="-xsl:@{stylesheet}"/>
+                        <arg value="-o:@{outputFile}"/>
+                        <arg value="-warnings:recover"/> <!-- recover after writing a warning message -->
+                        <arg value="@{parameter1}"/>
+                        <arg value="@{parameter2}"/>
+                    </java> 
+                </else>
+            </if>
+            <replace file="@{outputFile}"  token=' xmlns:date="http://exslt.org/dates-and-times"'     value=""  summary="true" failOnNoReplacements="false"/>
+            <replace file="@{outputFile}"  token=' xmlns:fn="http://www.w3.org/2005/xpath-functions"' value=""  summary="true" failOnNoReplacements="false"/>    
+        </sequential>
+    </macrodef>
+
+    <!-- target tasks ===================================================================== -->
+
+    <target name="all" depends="clean.backups,build,copy,zip,scp.uploadTooltips.web3d" description="prepare, build and upload X3d tooltip pages">
+    </target>
+    
+    <target name="clean.backups" depends="" description="clean out unnecessary backup files (only)" >
+        <echo message="clean/delete backup files"/>
+        <delete>
+            <fileset dir="." includes="*.bak"/>
+            <fileset dir="." includes="*.$$$$$$"/> <!-- escape $ as $$ -->
+        </delete>
+    </target>
+
+    <target name="validate" depends="" description="validate XML tooltip pages">
+        <xmlvalidate failonerror="false" warn="true">
+            <fileset dir="." includes="x3d-4.0.profile*.xml"/>
+            <fileset dir="." includes="x3d-3.3.profile*.xml"/>
+            <fileset dir="." includes="x3d-3.2.profile*.xml"/>
+            <fileset dir="." includes="x3d-3.1.profile*.xml"/>
+            <fileset dir="." includes="x3d-3.0.profile*.xml"/>
+        </xmlvalidate>
+    </target>
+
+    <target name="latest" depends="" description="Test latest XML tooltip page during development">
+        <xmlvalidate failonerror="true" warn="true">
+            <fileset dir="." includes="x3d-4.0.profile.xml"/>
+        </xmlvalidate>
+        <!-- saxon10.XML is locally defined macro -->
+        <saxon10.XML inputXML="x3d-4.0.profile.xml"           outputFile="X3dTooltips.html"           stylesheet="X3dTooltipConversions.xslt"/>
+    </target>
+
+    <target name="build.primary" depends="validate" description="Create single most-current XML tooltip page from tooltip profile">
+        <!-- saxon10.XML is locally defined macro -->
+        <saxon10.XML inputXML="x3d-4.0.profile.xml"           outputFile="X3dTooltips.html"           stylesheet="X3dTooltipConversions.xslt"/>
+    </target>
+
+    <target name="build.japanese" depends="validate" description="Create Japanese XML tooltip pages from tooltip profiles">
+        <!-- saxon10.XML is locally defined macro -->
+        <saxon10.XML inputXML="x3d-3.3.profileJapanese.xml"     outputFile="X3dTooltipsJapanese.html"     stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=Japanese" parameter2="version=3.3"/>
+    </target>
+
+    <target name="build.korean" depends="validate" description="Create Korean XML tooltip pages from tooltip profiles">
+        <!-- saxon10.XML is locally defined macro -->
+        <saxon10.XML inputXML="x3d-3.2.profileKorean.xml"     outputFile="X3dTooltipsKorean.html"     stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=Korean" parameter2="version=3.2"/>
+    </target>
+
+    <target name="build.thai" depends="validate" description="Create Thai XML tooltip pages from tooltip profiles">
+        <!-- saxon10.XML is locally defined macro -->
+        <saxon10.XML inputXML="x3d-3.3.profileThai.xml"       outputFile="X3dTooltipsThai.html"       stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=Thai" parameter2="version=3.3"/>
+    </target>
+
+    <target name="build" depends="validate" description="Create multilingual XML tooltip pages from tooltip profiles">
+        <!-- saxon10.XML is locally defined macro -->
+        <!-- default version=4.0, default language tooltipLanguage=English -->
+        <saxon10.XML inputXML="x3d-4.0.profile.xml"           outputFile="X3dTooltips.html"           stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=English"    parameter2="version=4.0"/>
+        <saxon10.XML inputXML="x3d-3.3.profile.xml"           outputFile="X3dTooltips3.3.html"        stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=English"    parameter2="version=3.3"/>
+        <saxon10.XML inputXML="x3d-3.2.profile.xml"           outputFile="X3dTooltips3.2.html"        stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=English"    parameter2="version=3.2"/>
+        <saxon10.XML inputXML="x3d-3.1.profile.xml"           outputFile="X3dTooltips3.1.html"        stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=English"    parameter2="version=3.1"/>
+        <saxon10.XML inputXML="x3d-3.0.profile.xml"           outputFile="X3dTooltips3.0.html"        stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=English"    parameter2="version=3.0"/>
+        <saxon10.XML inputXML="x3d-3.1.profileFrench.xml"     outputFile="X3dTooltipsFrench.html"     stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=French"     parameter2="version=3.3"/>
+        <saxon10.XML inputXML="x3d-3.1.profileGerman.xml"     outputFile="X3dTooltipsGerman.html"     stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=German"     parameter2="version=3.3"/>
+        <saxon10.XML inputXML="x3d-3.1.profileItalian.xml"    outputFile="X3dTooltipsItalian.html"    stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=Italian"    parameter2="version=3.3"/>
+        <saxon10.XML inputXML="x3d-3.3.profileJapanese.xml"   outputFile="X3dTooltipsJapanese.html"   stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=Japanese"   parameter2="version=3.3"/>
+        <saxon10.XML inputXML="x3d-3.2.profileKorean.xml"     outputFile="X3dTooltipsKorean.html"     stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=Korean"     parameter2="version=3.2"/>
+        <saxon10.XML inputXML="x3d-3.1.profilePortuguese.xml" outputFile="X3dTooltipsPortuguese.html" stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=Portuguese" parameter2="version=3.3"/>
+        <saxon10.XML inputXML="x3d-3.1.profileSpanish.xml"    outputFile="X3dTooltipsSpanish.html"    stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=Spanish"    parameter2="version=3.3"/>
+        <saxon10.XML inputXML="x3d-3.3.profileThai.xml"       outputFile="X3dTooltipsThai.html"       stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=Thai"       parameter2="version=3.3"/>
+        <!-- TODO fix warnings -->
+        <saxon10.XML inputXML="x3d-3.1.profileChinese.xml"    outputFile="X3dTooltipsChinese.html"    stylesheet="X3dTooltipConversions.xslt" parameter1="tooltipLanguage=Chinese"    parameter2="version=3.3"/>
+    </target>
+
+    <target name="copy" depends="" description="Copy HTML tooltip pages to original directory">
+        <copy todir='../content' verbose='true'>
+            <fileset dir=".">
+                <include name="X3dTooltips*.html"/>
+            </fileset>
+        </copy>
+    </target>
+    
+    <target name="zip" depends="" description="zip tooltip files" >
+        <zip destfile="X3dTooltips.zip" >
+            <zipfileset dir="." prefix="www.web3d.org/x3d/tooltips/">
+                <include name="README.txt"/>
+                <include name="X3dTooltips*.html"/>
+                <include name="license.*"/>
+                <include name="*.txt"/>
+                <include name="*.xml"/>
+                <include name="*.xslt"/>
+                <include name="*.dtd"/>
+                <include name="icons/*.*"/>
+                <include name="examples/X3dResources.html"/>
+            </zipfileset>
+        </zip>
+    </target>
+    <target name="scp.askUsernamePassword.web3d"
+        description="If needed, ask for username, password">
+        <if>
+            <not>
+                <and>
+                    <isset property="username.web3d"/>
+                    <isset property="password.web3d"/>
+                </and>
+            </not>
+            <then>
+                <echo  message="username.web3d, password.web3d not obtained via file ${access.properties.filename}"/>
+                <input message="username.web3d:"
+                addproperty="username.web3d" />
+                <input message="password.web3d:"
+                addproperty="password.web3d" />
+                <echo  message="username.web3d=${username.web3d}"/>
+                <echo  message="password.web3d=################"/>
+                <!--<echo  message="password.web3d=${password.web3d}"/> debug -->
+            </then>
+            <else>
+                <echo  message="hostname.web3d, username.web3d, password.web3d obtained from file ${access.properties.filename}"/>
+            </else>
+        </if>
+    </target>
+
+    <target name="upload.scp.latest"                        depends="build.primary,scp.uploadTooltips.web3d.latest"/>
+
+    <!-- ensure that you have previously connected to this host via ssh and saved the server key -->
+    <!-- note that tooltips are still going to https://www.web3d.org/x3d/content directory -->
+    <target name="scp.uploadTooltips.web3d.latest" depends="scp.askUsernamePassword.web3d,clean.backups"
+        description="scp sftp upload of updated X3D tooltip files">
+        <echo  message="scp (sftp) upload stylesheets to ${username.web3d}@${sftpServer.web3d}:${sftpDirectory.web3d.tooltips}"/>
+        <!-- upload stylesheets -->
+        <scp remotetodir="${username.web3d}@${sftpServer.web3d}:${sftpDirectory.web3d.tooltips}" password="${password.web3d}"
+               trust="yes" verbose="true">
+            <fileset dir=".">
+                <include name="license.*"/>
+                <include name="README.txt"/>
+                <include name="X3dTooltips.html"/>
+                <include name="x3d-4.0.profile.xml"/>
+                <include name="X3dTooltipConversions.xslt"/>
+            </fileset>
+        </scp>
+    </target>
+
+    <target name="upload.scp"                        depends="scp.uploadTooltips.web3d"/>
+
+    <!-- ensure that you have previously connected to this host via ssh and saved the server key -->
+    <!-- note that tooltips are still going to https://www.web3d.org/x3d/content directory -->
+    <target name="scp.uploadTooltips.web3d" depends="scp.askUsernamePassword.web3d,clean.backups"
+        description="scp sftp upload of updated X3D tooltip files">
+        <echo  message="scp (sftp) upload stylesheets to ${username.web3d}@${sftpServer.web3d}:${sftpDirectory.web3d.tooltips}"/>
+        <!-- upload stylesheets -->
+        <scp remotetodir="${username.web3d}@${sftpServer.web3d}:${sftpDirectory.web3d.tooltips}" password="${password.web3d}"
+               trust="yes" verbose="true">
+            <fileset dir=".">
+                <include name="README.txt"/>
+                <include name="X3dTooltips*.html"/>
+                <include name="*.xml"/>
+                <include name="X3dTooltipConversions.xslt"/>
+            </fileset>
+        </scp>
+        <!-- upload image icons -->
+        <scp remotetodir="${username.web3d}@${sftpServer.web3d}:${sftpDirectory.web3d.tooltips}/icons" password="${password.web3d}"
+               trust="yes" verbose="true">
+            <fileset dir="icons">
+                <include name="*.ico"/>
+                <include name="*.gif"/>
+                <include name="*.png"/>
+                <include name="*.pdf"/>
+                <include name="*.tif"/>
+                <include name="*.tiff"/>
+                <include name="*.wpg"/>
+            </fileset>
+        </scp>
+        <!-- .zip archive -->
+        <scp remotetodir="${username.web3d}@${sftpServer.web3d}:${sftpDirectory.web3d.tooltips}" password="${password.web3d}"
+               trust="yes" verbose="true">
+            <fileset dir=".">
+                <include name="X3dTooltips.zip"/>
+            </fileset>
+        </scp>
+        <echo  message="results online at https://www.web3d.org/x3d/tooltips/X3dTooltips.html"/>
+        <echo  message="scp.uploadTooltips.web3d ssh-sftp task complete"/>
+    </target>
+
+    <!-- subversion checkout address to download latest x3d configuration files (https prefix works in browser but fails in Ant) -->
+    <property name="x3d.sourceforge.site" value="http://svn.code.sf.net/p/x3d/code/www.web3d.org"/>
+    <!-- TODO protocol switching problem https://sourceforge.net/p/x3d/code/12736/tree/www.web3d.org/x3d/tooltips/ -->
+    <!-- subversion viewvc   address to download latest x3d configuration files, disabled by Sourceforge January 2011
+    <property name="x3d.sourceforge.site" value="${x3d.sourceforge.site}"/>
+    -->
+
+    <target name="hudson" description="nightly build" depends="hudson.prepare,build">
+    </target>
+
+    <target name="hudson.prepare" description="setup hudson server-side build" depends="">
+        <!-- hudson configuration needs to reset property values to match subdirectories below:
+             saxon.dir=lib
+             ignoreSetupDownloadErrors=true-->
+        <!-- hudson project description:
+<p>
+Check and build the <a href="https://www.web3d.org/x3d/content/examples/X3dResources.html#Tooltips" target="_blank">X3D Tooltips</a>
+which provide multilingual hints for each node and field (i.e. each element and attribute) in X3D.
+</p>
+<p>
+Available results:
+</p>
+<ul>
+<li><a href="ws/tooltips/X3dTooltips.html">X3D Tooltips in English</a></li>
+<li><a href="ws/tooltips/X3dTooltipsChinese.html">X3D Tooltips in Chinese</a></li>
+<li><a href="ws/tooltips/X3dTooltipsFrench.html">X3D Tooltips in French</a></li>
+<li><a href="ws/tooltips/X3dTooltipsGerman.html">X3D Tooltips in German</a></li>
+<li><a href="ws/tooltips/X3dTooltipsItalian.html">X3D Tooltips in Italian</a></li>
+<li><a href="ws/tooltips/X3dTooltipsPortuguese.html">X3D Tooltips in Portuguese</a></li>
+<li><a href="ws/tooltips/X3dTooltipsSpanish.html">X3D Tooltips in Spanish</a></li>
+</ul>
+        -->
+        <echo message="get local copies of dependency files in order to independently prepare hudson server-side build"/>
+        <echo message="Build settings:   saxon.dir=${saxon.dir}"/>
+        <echo message="                  saxon.jar=${saxon.jar}"/>
+        <echo message="  ignoreSetupDownloadErrors=${ignoreSetupDownloadErrors}"/>
+        <mkdir dir="lib"/>
+        <get src="${x3d.sourceforge.site}/x3d/tools/schematron/bin/${saxon.jar}"
+                                                         dest="lib/${saxon.jar}" verbose="true" ignoreerrors="${ignoreSetupDownloadErrors}"/>
+    </target>
+    
+    <target name="view.tooltips.local" description="view local tooltips in web browser (via Netbeans only)">
+        <nbbrowse file="X3dTooltips.html" />
+        <!-- TODO implementation-independent approach if possible. other Ant approaches have to be customized for each OS -->
+    </target>
+
+    <target name="view.tooltips.local.Japanese" description="view local Japanese tooltips in web browser (via Netbeans only)">
+        <nbbrowse file="X3dTooltipsJapanese.html" />
+        <!-- TODO implementation-independent approach if possible. other Ant approaches have to be customized for each OS -->
+    </target>
+    
+    <target name="view.tooltips.local.Thai" description="view local Thai tooltips in web browser (via Netbeans only)">
+        <nbbrowse file="X3dTooltipsThai.html" />
+        <!-- TODO implementation-independent approach if possible. other Ant approaches have to be customized for each OS -->
+    </target>
+
+    <target name="view.tooltips.online" description="view online tooltips in web browser (Netbeans only)">
+        <nbbrowse url="https://www.web3d.org/x3d/content/X3dTooltips.html" />
+    </target>
+
+    <target name="view.tooltips.sourceforge" description="view online version control in web browser (Netbeans only)">
+        <nbbrowse url="https://sourceforge.net/p/x3d/code/HEAD/tree/www.web3d.org/x3d/tooltips" />
+    </target>
+
+</project>

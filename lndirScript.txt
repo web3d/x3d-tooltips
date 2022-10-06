@@ -1,0 +1,13 @@
+ln -s ../stylesheets/X3dTooltips.html            X3dTooltips.html
+
+ln -s ../stylesheets/X3dTooltips3.1.html         X3dTooltips3.1.html
+ln -s ../stylesheets/X3dTooltips3.2.html         X3dTooltips3.2.html
+ln -s ../stylesheets/X3dTooltipsChinese.html     X3dTooltipsChinese.html
+ln -s ../stylesheets/X3dTooltipsFrench.html      X3dTooltipsFrench.html
+ln -s ../stylesheets/X3dTooltipsGerman.html      X3dTooltipsGerman.html
+ln -s ../stylesheets/X3dTooltipsItalian.html     X3dTooltipsItalian.html
+ln -s ../stylesheets/X3dTooltipsJapanese.html    X3dTooltipsJapanese.html
+ln -s ../stylesheets/X3dTooltipsKorean.html      X3dTooltipsKorean.html
+ln -s ../stylesheets/X3dTooltipsPortuguese.html  X3dTooltipsPortuguese.html
+ln -s ../stylesheets/X3dTooltipsSpanish.html     X3dTooltipsSpanish.html
+ln -s ../stylesheets/X3dTooltipsThai.html        X3dTooltipsThai.html

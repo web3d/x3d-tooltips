@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Project>
+	<Folder FolderName="XML Files" ExtStr="xml;cml;math;rdf;smil;svg;wml">
+		<File FilePath="x3d-3.0.profile.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.0.profileChinese.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.0.profileCroatian.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.0.profileFrench.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.0.profileGerman.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.0.profileItalian.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.0.profilePortuguese.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.0.profileRussian.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.0.profileSpanish.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.1.profile.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.1.profileChinese.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.1.profileCroatian.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.1.profileFrench.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.1.profileGerman.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.1.profileGreek.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.1.profileItalian.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.1.profilePortuguese.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.1.profileRussian.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.1.profileSpanish.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.2.profile.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.2.profileKorean.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.3.profile.xml" HomeFolder="Yes"/>
+		<File FilePath="x3d-3.3.profileJapanese.xml" HomeFolder="Yes"/>
+	</Folder>
+	<Folder FolderName="XSL Files" ExtStr="xsl;xslt">
+		<File FilePath="X3dTooltipConversions.xslt" HomeFolder="Yes"/>
+	</Folder>
+	<Folder FolderName="HTML Files" ExtStr="html;htm;xhtml;asp">
+		<File FilePath="X3dTooltips.html" HomeFolder="Yes"/>
+		<File FilePath="X3dTooltipsChinese.html" HomeFolder="Yes"/>
+		<File FilePath="X3dTooltipsFrench.html" HomeFolder="Yes"/>
+		<File FilePath="X3dTooltipsGerman.html" HomeFolder="Yes"/>
+		<File FilePath="X3dTooltipsItalian.html" HomeFolder="Yes"/>
+		<File FilePath="X3dTooltipsPortuguese.html" HomeFolder="Yes"/>
+		<File FilePath="X3dTooltipsSpanish.html" HomeFolder="Yes"/>
+	</Folder>
+	<Folder FolderName="DTD/Schemas" ExtStr="dtd;dcd;xdr;biz;xsd">
+		<File FilePath="profile.dtd" HomeFolder="Yes"/>
+	</Folder>
+</Project>

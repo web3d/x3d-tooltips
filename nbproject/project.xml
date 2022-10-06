@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://www.netbeans.org/ns/project/1">
+    <type>org.netbeans.modules.ant.freeform</type>
+    <configuration>
+        <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
+            <!-- Do not use Project Properties customizer when editing this file manually. -->
+            <name>X3D tooltips</name>
+            <properties/>
+            <ide-actions>
+                <action name="build">
+                    <target>build</target>
+                </action>
+                <action name="clean">
+                    <target>clean.backups</target>
+                </action>
+                <action name="run">
+                    <target>all</target>
+                </action>
+                <action name="test">
+                    <target>validate</target>
+                </action>
+                <action name="rebuild">
+                    <target>clean.backups</target>
+                    <target>build</target>
+                </action>
+            </ide-actions>
+            <view>
+                <items>
+                    <source-file>
+                        <location>README.txt</location>
+                    </source-file>
+                    <source-file>
+                        <location>build.xml</location>
+                    </source-file>
+                    <source-file>
+                        <label>X3D Tooltips</label>
+                        <location>X3dTooltips.html</location>
+                    </source-file>
+                    <source-file>
+                        <label>License</label>
+                        <location>license.txt</location>
+                    </source-file>
+                </items>
+                <context-menu>
+                    <ide-action name="build"/>
+                    <ide-action name="rebuild"/>
+                    <ide-action name="clean"/>
+                    <ide-action name="run"/>
+                    <ide-action name="test"/>
+                </context-menu>
+            </view>
+        </general-data>
+        <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/1"/>
+        <spellchecker-wordlist xmlns="http://www.netbeans.org/ns/spellchecker-wordlist/1">
+            <word>accessType</word>
+            <word>Brutzman</word>
+            <word>edu</word>
+            <word>html</word>
+            <word>inputOutput</word>
+            <word>nps</word>
+            <word>Redistributions</word>
+            <word>SourceForge</word>
+            <word>stylesheet</word>
+            <word>tooltip</word>
+            <word>tooltips</word>
+            <word>xml</word>
+        </spellchecker-wordlist>
+    </configuration>
+</project>
